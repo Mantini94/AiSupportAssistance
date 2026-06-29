@@ -50,7 +50,7 @@ export function useTickets(session) {
     const { data, error } = await supabase
       .from("tickets")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("last_message_at", { ascending: false });
 
     setTicketsLoading(false);
 
@@ -77,104 +77,89 @@ export function useTickets(session) {
   }
 
   async function createTicket({ customerEmail, customerName, subject, message, onSuccess }) {
-    if (!subject || !message) {
-      alert("Fill subject and message.");
+  if (!subject || !message) {
+    alert("Fill subject and message.");
+    return;
+  }
+
+  try {
+    setSavingTicketId("new-ticket");
+
+    const now = new Date().toISOString();
+
+    const { data: createdTicket, error } = await supabase
+      .from("tickets")
+      .insert([
+        {
+          user_id: session.user.id,
+          source: "manual",
+
+          customer_email: customerEmail || null,
+          customer_name: customerName || null,
+
+          subject,
+          title: subject,
+          original_message: message,
+          description: message,
+
+          ai_summary: null,
+          ai_category: null,
+          ai_urgency: null,
+          ai_sentiment: null,
+          ai_risk: null,
+          ai_spam: false,
+          ai_confidence: null,
+          suggested_actions: null,
+          ai_reply: "",
+          final_reply: "",
+
+          reply_status: "draft",
+          human_edited: false,
+
+          status: "new",
+          priority: "medium",
+
+          last_message_at: now,
+          updated_at: now,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      alert("Insert failed. Check your Supabase columns.");
       return;
     }
 
-    try {
-      setSavingTicketId("new-ticket");
+    const { error: messageError } = await supabase.from("ticket_messages").insert({
+      ticket_id: createdTicket.id,
+      user_id: session.user.id,
+      role: "customer",
+      sender_email: customerEmail || null,
+      sender_name: customerName || null,
+      subject,
+      message,
+      source: "manual",
+      ai_generated: false,
+    });
 
-      const response = await fetch(N8N_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject,
-          message,
-          original_message: message,
-          customer_email: customerEmail,
-          customer_name: customerName,
-          source: "manual",
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("n8n analysis error:", errorText);
-        alert("AI analysis failed.");
-        return;
-      }
-
-      const aiResult = await response.json();
-
-      const { data: createdTicket, error } = await supabase
-        .from("tickets")
-        .insert([
-          {
-            user_id: session.user.id,
-            source: "manual",
-            customer_email: customerEmail || null,
-            customer_name: customerName || null,
-            subject,
-            title: subject,
-            original_message: message,
-            description: message,
-
-            ai_summary: aiResult.ai_summary || null,
-            ai_category: aiResult.ai_category || null,
-            ai_urgency: aiResult.ai_urgency || null,
-            ai_sentiment: aiResult.ai_sentiment || null,
-            ai_risk: aiResult.ai_risk || null,
-            ai_spam: aiResult.ai_spam || false,
-            ai_confidence: aiResult.ai_confidence || null,
-            suggested_actions: aiResult.suggested_actions || null,
-            ai_reply: aiResult.ai_reply || "",
-            final_reply: aiResult.ai_reply || "",
-
-            reply_status: "draft",
-            human_edited: false,
-
-            status: aiResult.ai_spam ? "spam" : "new",
-            priority: aiResult.ai_urgency === "critical" ? "high" : "medium",
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error(error);
-        alert("Insert failed. Check your Supabase columns.");
-        return;
-      }
-
-      const { error: messageError } = await supabase.from("ticket_messages").insert({
-        ticket_id: createdTicket.id,
-        user_id: session.user.id,
-        role: "customer",
-        sender_email: customerEmail || null,
-        sender_name: customerName || null,
-        subject,
-        message,
-        source: "manual",
-        ai_generated: false,
-      });
-
-      if (messageError) {
-        console.error(messageError);
-        alert("Customer message insert failed.");
-        return;
-      }
-
-      onSuccess?.();
-      getTickets();
-      getTicketMessages();
-    } catch (error) {
-      console.error(error);
-      alert("Ticket creation failed.");
-    } finally {
-      setSavingTicketId(null);
+    if (messageError) {
+      console.error(messageError);
+      alert("Customer message insert failed.");
+      return;
     }
+
+    onSuccess?.();
+    getTickets();
+    getTicketMessages();
+  } catch (error) {
+    console.error(error);
+    alert("Ticket creation failed.");
+  } finally {
+    setSavingTicketId(null);
   }
+}
 
   async function updateTicketStatus(id, status) {
     await supabase.from("tickets").update({ status }).eq("id", id);

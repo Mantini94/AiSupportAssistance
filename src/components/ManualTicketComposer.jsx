@@ -57,7 +57,7 @@ export function ManualTicketComposer({ onCreateTicket, savingTicketId }) {
           onClick={handleCreateTicket}
           disabled={savingTicketId === "new-ticket"}
         >
-          {savingTicketId === "new-ticket" ? "Analyzing..." : "Create + AI"}
+          {savingTicketId === "new-ticket" ? "Analyzing..." : "Create"}
         </button>
       </div>
     </section>
