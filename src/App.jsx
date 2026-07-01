@@ -21,6 +21,7 @@ function App() {
     updateTicketStatus,
     saveReply,
     approveReply,
+    regenerateReply,
     markAsSent,
     deleteTicket,
     messagesByTicketId,
@@ -65,6 +66,7 @@ function App() {
             onReplyDraftChange={handleReplyDraftChange}
             onSaveReply={saveReply}
             onApproveReply={approveReply}
+            onRegenerateReply={regenerateReply}
             onMarkAsSent={markAsSent}
             onUpdateStatus={updateTicketStatus}
             onDeleteTicket={deleteTicket}

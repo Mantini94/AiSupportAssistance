@@ -9,6 +9,7 @@ export function TicketList({
   onReplyDraftChange,
   onSaveReply,
   onApproveReply,
+  onRegenerateReply,
   onMarkAsSent,
   onUpdateStatus,
   onDeleteTicket,
@@ -35,6 +36,7 @@ export function TicketList({
             onReplyDraftChange={onReplyDraftChange}
             onSaveReply={onSaveReply}
             onApproveReply={onApproveReply}
+            onRegenerateReply={onRegenerateReply}
             onMarkAsSent={onMarkAsSent}
             onUpdateStatus={onUpdateStatus}
             onDeleteTicket={onDeleteTicket}

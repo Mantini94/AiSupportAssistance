@@ -29,6 +29,7 @@ export function TicketCard({
   onReplyDraftChange,
   onSaveReply,
   onApproveReply,
+  onRegenerateReply,
   onMarkAsSent,
   onUpdateStatus,
   onDeleteTicket,
@@ -72,36 +73,50 @@ export function TicketCard({
           </span>
         </div>
       </div>
+<section className="ticket-workspace">
+  <ConversationThread ticket={ticket} messages={messages} />
 
-      <section className="ai-command-card">
-        <AiAnalysisCard ticket={ticket} />
+  <AiAnalysisCard ticket={ticket} />
 
-        <div className="ticket-lower-grid">
-          <SuggestedActions ticket={ticket} />
-          <ConversationThread ticket={ticket} messages={messages} />
-          <ReplyPanel
-            ticket={ticket}
-            replyDraft={replyDraft}
-            savingTicketId={savingTicketId}
-            onReplyDraftChange={onReplyDraftChange}
-            onSaveReply={onSaveReply}
-            onApproveReply={onApproveReply}
-            onMarkAsSent={onMarkAsSent}
-          />
-        </div>
-      </section>
+  <SuggestedActions ticket={ticket} />
 
-      <div className="workflow-actions">
-        {STATUS_OPTIONS.map((status) => (
-          <button key={status} className="small-button" onClick={() => onUpdateStatus(ticket.id, status)}>
-            {formatStatus(status)}
-          </button>
-        ))}
+  <ReplyPanel
+    ticket={ticket}
+    replyDraft={replyDraft}
+    savingTicketId={savingTicketId}
+    onReplyDraftChange={onReplyDraftChange}
+    onSaveReply={onSaveReply}
+    onApproveReply={onApproveReply}
+    onRegenerateReply={onRegenerateReply}
+    onMarkAsSent={onMarkAsSent}
+  />
 
-        <button className="danger-button" onClick={() => onDeleteTicket(ticket.id)}>
-          Delete
-        </button>
-      </div>
+<div className="workflow-toolbar">
+  <div className="status-segmented" aria-label="Ticket status">
+    {STATUS_OPTIONS.map((status) => (
+      <button
+        key={status}
+        type="button"
+        className={`status-segment ${ticket.status === status ? "active" : ""}`}
+        onClick={() => onUpdateStatus(ticket.id, status)}
+      >
+        {formatStatus(status)}
+      </button>
+    ))}
+  </div>
+
+  <button
+    type="button"
+    className="delete-icon-button"
+    onClick={() => onDeleteTicket(ticket.id)}
+    title="Delete ticket"
+  >
+    Delete
+  </button>
+</div>
+</section>
+
+      
     </article>
   );
 }

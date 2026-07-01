@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
-import { getFinalReply, N8N_WEBHOOK_URL, SEND_REPLY_WEBHOOK } from "../lib/ticketHelpers";
+import { getFinalReply, REGENERATE_REPLY_WEBHOOK, SEND_REPLY_WEBHOOK } from "../lib/ticketHelpers";
 
 export function useTickets(session) {
   const [tickets, setTickets] = useState([]);
@@ -220,6 +220,64 @@ export function useTickets(session) {
     getTickets();
   }
 
+  async function regenerateReply(ticket) {
+  setSavingTicketId(ticket.id);
+
+  try {
+    const currentDraft = replyDrafts[ticket.id] || ticket.final_reply || ticket.ai_reply || "";
+console.log("Regenerate webhook URL:", REGENERATE_REPLY_WEBHOOK);
+    const response = await fetch(REGENERATE_REPLY_WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mode: "regenerate_reply",
+        ticket_id: ticket.id,
+        customer_email: ticket.customer_email,
+        customer_name: ticket.customer_name,
+        subject: ticket.subject || ticket.title || "Support ticket",
+        original_message: ticket.original_message || ticket.description || "",
+        current_reply: currentDraft,
+        ai_summary: ticket.ai_summary,
+        ai_category: ticket.ai_category,
+        ai_urgency: ticket.ai_urgency,
+        ai_sentiment: ticket.ai_sentiment,
+        ai_risk: ticket.ai_risk,
+      }),
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      console.error("Regenerate failed:", result);
+      alert(result?.message || "Regenerate failed.");
+      return;
+    }
+
+    const newReply =
+      result?.reply ||
+      result?.ai_reply ||
+      result?.final_reply ||
+      result?.message ||
+      "";
+
+    if (!newReply.trim()) {
+      console.error("Regenerate response missing reply:", result);
+      alert("Regenerate returned empty reply.");
+      return;
+    }
+
+    setReplyDrafts((current) => ({
+      ...current,
+      [ticket.id]: newReply,
+    }));
+  } catch (error) {
+    console.error("regenerateReply error:", error);
+    alert("Regenerate failed. Check console.");
+  } finally {
+    setSavingTicketId(null);
+  }
+}
+
   async function markAsSent(ticket) {
     setSavingTicketId(ticket.id);
 
@@ -342,6 +400,7 @@ if (!response.ok || result?.success !== true) {
     updateTicketStatus,
     saveReply,
     approveReply,
+    regenerateReply,
     markAsSent,
     deleteTicket,
     messagesByTicketId,

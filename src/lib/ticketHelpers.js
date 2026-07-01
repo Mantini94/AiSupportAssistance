@@ -3,9 +3,12 @@ export const N8N_WEBHOOK_URL =
 
 export const SEND_REPLY_WEBHOOK =
   "https://n8n-mvj1.srv1505698.hstgr.cloud/webhook/send-ticket-reply";
+
+  export const REGENERATE_REPLY_WEBHOOK =
+  "https://n8n-mvj1.srv1505698.hstgr.cloud/webhook/regenerate-ticket-reply";
   
 
-export const STATUS_OPTIONS = ["new", "pending", "needs_review", "resolved", "spam"];
+export const STATUS_OPTIONS = ["new", "pending", "resolved", "spam"];
 
 export function formatStatus(value) {
   if (!value) return "Unknown";
