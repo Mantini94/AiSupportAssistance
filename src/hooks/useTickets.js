@@ -250,15 +250,16 @@ export function useTickets(session) {
         }),
       });
 
-      console.log("n8n response status:", response.status);
+console.log("n8n response status:", response.status);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("n8n send error:", errorText);
-        alert("n8n email send failed.");
-        setSavingTicketId(null);
-        return;
-      }
+const result = await response.json().catch(() => null);
+
+if (!response.ok || result?.success !== true) {
+  console.error("n8n send error:", result);
+  alert(result?.message || "Email was not sent. Ticket was not marked as sent.");
+  setSavingTicketId(null);
+  return;
+}
 
       const { error: messageError } = await supabase.from("ticket_messages").insert({
         ticket_id: ticket.id,
